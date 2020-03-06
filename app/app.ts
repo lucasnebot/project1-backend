@@ -40,7 +40,7 @@ app.use('/api/*', (req,res, next) => {
 })
 
 app.get('/',  (req, res) => {
-  res.send('Hello World!');
+  res.send('Hello World from 🐳!');
 });
 
 app.post('/login', (req, res) => {
