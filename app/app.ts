@@ -67,4 +67,5 @@ app.get('/api/treasure', (req,res) => {
 const port = process.env.PORT || 3000
 app.listen(port,  () =>  {
   console.log(`Project1 backend listening on port ${port}!`);
+  console.log(`Environment variable test: ${process.env.TEST}`)
 });
