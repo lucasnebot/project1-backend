@@ -1,41 +1,14 @@
 import {User} from './models/user'
 import express from 'express'
 import jwt from 'jsonwebtoken'
-import {ConnectionPool, config, IResult} from 'mssql';
+import {IResult} from 'mssql';
+import {DBService} from './services/dbService'
 import assert from 'assert'
 
-
-// TODO extract to own module/class Services/dbService
-assert(process.env.DB_USER, "Database User not set")
-assert(process.env.DB_PWD, "Database Password not set")
-assert(process.env.DB_SERVER_URL, "Database Server URL not set")
-assert(process.env.DB_NAME, "Database name not set")
-
-const sqlConfig: config = {
-  user: process.env.DB_USER,
-  password: process.env.DB_PWD,
-  server: process.env.DB_SERVER_URL as string,
-  database: process.env.DB_NAME as string,
-  options: {
-    encrypt: true, // nessessary for connection with Azure
-    enableArithAbort: true // Only set to silence deprecated warning
-  }
-};
-
-let sql: ConnectionPool;
-
-// Connect to Database
-(async () => {
-  try {
-    sql = await new ConnectionPool(sqlConfig).connect()
-  } catch (err) {
-    console.log(err)
-  }
-})()
+const dbService = new DBService()
 
 // ! Express
 const app = express();
-
 const users: User[] = [
   {
       username: 'john',
@@ -47,12 +20,14 @@ const users: User[] = [
       role: 'member'
   }
 ];
-const secret = "youshallpass"
 
 
+assert(process.env.JWT_SECRET, "No JWT secret set")
+const secret = process.env.JWT_SECRET as string
+
+// Middleware
 app.use(express.json()) // Body-parser
 
-// Middleware only for api calls
 app.use('/api/*', (req,res, next) => {
 
   const authHeader = req.headers.authorization
@@ -91,9 +66,9 @@ app.post('/login', (req, res) => {
   }
 })
 
-// TODO 
+
 app.get("/items", async (req, res) => {
-  let queryResult = await sql.request().query("Select * from Items").catch((err) => {
+  let queryResult = await dbService.getItems().catch((err) => {
     console.log(err)
     res.sendStatus(500)
   }) as IResult<any>
@@ -105,17 +80,23 @@ app.get('/api/treasure', (req,res) => {
   res.send(`💰 for ${req.user.username}`)
 })
 
-const port = process.env.PORT || 3000
-const server = app.listen(port,  () =>  {
-  console.log(`Project1 backend listening on port ${port}!`);
-  console.log(`Environment variable test: ${process.env.TEST}`)
-});
+//! Connect to DB and start server
+dbService.connect()
+.then(() => {
+  const port = process.env.PORT || 3000
+  app.listen(port,  () =>  {
+    console.log(`Project1 backend listening on port ${port}!`);
+  });
+})
+.catch((err) => console.log(err))
 
 
-// Gracefull shutdown
+// ?  Nessessary ?
+/* // Gracefull shutdown
 process.on("SIGTERM", () => {
   console.log("Termination Signal received")
   new Promise((resolve, reject) => server.close(() => resolve()))
   .then(() => sql.close())
   .then(() => process.exit(0))
 })
+ */
