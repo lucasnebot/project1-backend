@@ -1,7 +1,7 @@
 import {User} from './models/user'
 import express from 'express'
 import jwt from 'jsonwebtoken'
-import {ConnectionPool, config} from 'mssql';
+import {ConnectionPool, config, IResult} from 'mssql';
 import assert from 'assert'
 
 
@@ -93,7 +93,11 @@ app.post('/login', (req, res) => {
 
 // TODO 
 app.get("/items", async (req, res) => {
-  res.send((await sql.request().query("Select * from Items")).recordset)
+  let queryResult = await sql.request().query("Select * from Items").catch((err) => {
+    console.log(err)
+    res.sendStatus(500)
+  }) as IResult<any>
+  res.send(queryResult.recordset)
 })
 
 // TODO extract to api path
