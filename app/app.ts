@@ -72,7 +72,7 @@ app.get("/items", async (req, res) => {
     console.log(err)
     res.sendStatus(500)
   }) as IResult<any>
-  res.send(queryResult.recordset)
+  res.send(queryResult?.recordset)
 })
 
 // TODO extract to api path
