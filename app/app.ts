@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken'
 import {IResult} from 'mssql';
 import {DBService} from './services/dbService'
 import assert from 'assert'
+import morgan from 'morgan';
 
 const dbService = new DBService()
 
@@ -46,6 +47,11 @@ app.use('/api/*', (req,res, next) => {
   
 })
 
+// Logger
+morgan.token("user", (req, res) => req.user?.username ? req.user.username : "guest")
+
+app.use(morgan(":method :url :status by :user | :res[content-length] B in :response-time ms | :date"));
+
 app.get('/',  (req, res) => {
   res.send('Hello World from 🐳!');
 });
@@ -84,6 +90,7 @@ app.get('/api/treasure', (req,res) => {
 dbService.connect()
 .then(() => {
   const port = process.env.PORT || 3000
+  console.log("DB connected")
   app.listen(port,  () =>  {
     console.log(`Project1 backend listening on port ${port}!`);
   });
